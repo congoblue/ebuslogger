@@ -17,6 +17,7 @@
 #  printf "My IP address is %s\n" "$_IP"
 #fi
 
-setsid python3 disptest.py < /dev/zero >& /dev/null &
+# replaced by @reboot in pi crontab (check_disptest.sh)
+#setsid python3 disptest.py < /dev/zero >& /dev/null &
 
 exit 0

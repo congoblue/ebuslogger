@@ -1,10 +1,11 @@
 # Ebus heating interface
 
-Having just had a new boiler installed which uses Ebus to communicate round the house, I was interested to be able to read the Ebus messages and check the status of the various parts of the heating system.
+This is a project for a Raspberry Pi to monitor Ebus central heating system and log some readings.
 
-So time to press into service a Raspberry Pi using the [ebusd](https://github.com/john30/ebusd) software by John30.
+A web dashboard page is generated, also a graph logging page showing readings over time.
 
-*Source: <https://congoblue.me/ebus.htm>*
+This project uses the [ebusd](https://github.com/john30/ebusd) software by John30.
+
 
 ## Setup
 
@@ -20,7 +21,7 @@ Uncomment the static IP section at the bottom (`interface eth0`, `static ip_addr
 
 ### Hardware interface
 
-A little bit of electronics is needed to interface to the ebus. I made the ebus interface from here:
+A little bit of electronics hardware is needed to interface to the ebus. I made the ebus interface from here:
 <https://ebus.github.io/adapter/index.en.html>
 
 ### Install ebusd
@@ -157,7 +158,32 @@ To check if it's still running use:
 ps -ef
 ```
 
-To make it run on boot, put this line in `/etc/rc.local`.
+### Start on boot and restart if it stops
+
+The watchdog script [`pi/check_disptest.sh`](pi/check_disptest.sh) (copied to `/home/pi/check_disptest.sh`, `chmod +x`) checks two things:
+
+1. **ebusd:** if the `ebusd` service isn't active, the script runs `sudo systemctl restart ebusd` (`pi` needs passwordless sudo). It then also restarts `disptest.py`, because the logger's TCP connection to ebusd on port 8888 dies when ebusd restarts.
+2. **disptest.py:** if it isn't running, the script starts it from `/home/pi` with the `setsid` line above.
+
+Each restart adds a dated line to `/home/pi/check_disptest.log`. (systemd already has `Restart=always` for ebusd, so this check is a backstop for when systemd gives up or the service has been stopped.)
+
+It runs from the `pi` user's crontab (`crontab -e`):
+
+```
+0 * * * * /home/pi/check_disptest.sh
+@reboot sleep 30 && /home/pi/check_disptest.sh
+```
+
+- `0 * * * *` checks once an hour and restarts ebusd and/or the logger if either has stopped.
+- `@reboot` starts it at boot, after a 30s delay so ebusd is up first.
+
+This replaces the old `/etc/rc.local` line, which ran as root from `/`, so it couldn't find `disptest.py` by its relative name. That line is now commented out.
+
+To see whether any restarts have happened:
+
+```sh
+cat ~/check_disptest.log
+```
 
 Eventually I have it working, and it is very good.
 
