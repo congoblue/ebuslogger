@@ -38,7 +38,7 @@ while 1:
 	cad.lcd.write(datetime.datetime.now().strftime(dateString))
 	cad.lcd.set_cursor(14, 0)
 	if (GPIO.input(24)!=0): 
-		cad.lcd.write("O")
+		cad.lcd.write("O") #this was intended to monitor the 2-port valve status
 	else:
 		cad.lcd.write("I")
 	if (GPIO.input(25)!=0): 
