@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width">
+	<title>ebusd</title>
+	<link rel="stylesheet" href="css/jsplumb.css">
+	<link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.4/raphael-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/justgage/1.2.9/justgage.min.js"></script>	
+</head>
+<body>
+<div>
+<div style="width:49%; float:left;" >
+<!--<p>350</p>-->
+<p>Room Temp: <span id="350temp"></span>&deg;C</p>
+<div id="350tempgauge" style="width:95%;"></div>
+</div>
+<div style="width:49%; float:left;" >
+<!--<p>v66</p>-->
+<p>HW Temp: <span id="temp"></span>&deg;C</p>
+<div id="hwtempgauge"  style="width:95%;"></div>
+<!--<p id="fields"></p>-->
+</div>
+</div>
+<div style="clear:both;"><hr></div>
+<div style="clear:both;">
+<div style="width:49%; float:left;" >
+<!--<p>bai</p>-->
+<p>FlowTemp: <span id="baitemp1"></span>&deg;C</p>
+<div id="baiflowtempgauge" style="width:95%;"></div>
+<p>Desired: <span id="baiflowtempdes"></span>&deg;C</p>
+<p>Heatsource: <span id="baipumpstate"></span></p>
+<p>Valve: <span id="valve"></span></p>
+</div>
+<div style="width:49%; float:left;" >
+<p>ReturnTemp: <span id="baitemp2"></span>&deg;C</p>
+<div id="baireturntempgauge" style="width:95%;"></div>
+<!--<p>Flame: <span id="baiflame"></span></p>-->
+<p>Pressure: <span id="baipress"></span> bar</p>
+<!--<p id="baifields"></p>-->
+</div>
+</div>
+<script>
+
+window.setInterval(queryJson,2000);
+//window.setInterval(requestUpdates,60000);
+requestUpdates();
+queryJson(); //the first time
+
+var gRoomTemp = new JustGage({id: "350tempgauge",value: 0,min: 0,max: 30, decimals:1 ,label: "Room Temp"});
+var gHwTemp = new JustGage({id: "hwtempgauge",value: 0,min: 0,max: 60,label: "HW Temp", decimals:1, levelColors: ['#004040', '#006060', '#008080', '#00A0A0']});
+var gBaiFlow = new JustGage({id: "baiflowtempgauge",value: 0,min: 0,max: 90, decimals:1 ,label: "Flow"});
+var gBaiReturn = new JustGage({id: "baireturntempgauge",value: 0,min: 0,max: 90, decimals:1, label: "Return"});
+
+
+function pageUpdate() {
+    if (this.readyState == 4 && this.status == 200) {
+        var tdata = JSON.parse(this.responseText);
+	//document.getElementById("fields").innerHTML = Object.keys(tdata.v65.messages.State.fields);
+	document.getElementById("temp").innerHTML = Object.values(tdata.v65.messages.State.fields.temp);
+	document.getElementById("valve").innerHTML = Object.values(tdata.v65.messages.State.fields.state);
+	gHwTemp.refresh(parseFloat(tdata.v65.messages.State.fields.temp.value));
+
+	//document.getElementById("baifields").innerHTML = Object.keys(tdata.bai.messages.Status01.fields);
+	document.getElementById("baitemp1").innerHTML = tdata.bai.messages.Status01.fields['0'].value;
+	document.getElementById("baitemp2").innerHTML = tdata.bai.messages.Status01.fields['1'].value;
+	document.getElementById("baiflowtempdes").innerHTML = tdata.bai.messages.SetMode.fields.flowtempdesired.value;
+	document.getElementById("baipumpstate").innerHTML = tdata.bai.messages.Status01.fields['5'].value;
+	document.getElementById("baipress").innerHTML = tdata.bai.messages.WaterPressure.fields.press.value;
+	gBaiFlow.refresh(parseFloat(tdata.bai.messages.Status01.fields['0'].value));
+	gBaiReturn.refresh(parseFloat(tdata.bai.messages.Status01.fields['1'].value));
+	//document.getElementById("baiflame").innerHTML = tdata.bai.messages.Flame.fields['0'].value;
+
+	//document.getElementById("350temp").innerHTML = Object.keys(tdata['350'].messages.DisplayedRoomTemp.fields);
+	document.getElementById("350temp").innerHTML = tdata['350'].messages.DisplayedRoomTemp.fields.temp.value;
+	gRoomTemp.refresh(parseFloat(tdata['350'].messages.DisplayedRoomTemp.fields.temp.value));
+
+	}
+}
+
+
+function queryJson() {
+	var requestURL = 'http://local.congoblue.me:8888/data';
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = pageUpdate;
+	xmlhttp.open('GET', requestURL, true);
+	xmlhttp.responseType = 'text';
+	xmlhttp.send();    
+  //document.getElementById("fields").innerHTML=Date.now();
+}
+
+//ask for the things which don't come automatically
+function requestUpdates() {
+//	fetch('http://local.congoblue.me:8888/data/bai/WaterPressure?required');
+	//fetch('http://192.168.1.240:8080/data/bai/Flame?required');
+//	fetch('http://local.congoblue.me:8888/data/350/DisplayedRoomTemp?required');
+}
+
+
+</script>
+
+</body>
+</html>

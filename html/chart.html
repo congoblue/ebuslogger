@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chart using XML Data</title>
+<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script type="text/javascript">
+    window.onload = function() {
+	
+		params = (new URL(document.location)).searchParams;
+		searchParams = new URLSearchParams(params);
+		
+		var tfrom=0, tto=24;
+
+		if (searchParams.has("from")) tfrom=parseFloat(searchParams.get("from"));
+		if (searchParams.has("to")) tto=parseFloat(searchParams.get("to"));
+	
+        var dataPoints = [];
+		console.debug(tfrom,tto);
+         
+        function getDataPointsFromCSV(csv,idx) {
+            var dataPoints = csvLines = points = [];
+            csvLines = csv.split(/[\r?\n|\r|\n]+/);         
+					        
+            for (var i = 0; i < csvLines.length; i++)
+                if (csvLines[i].length > 0) {
+                    points = csvLines[i].split(",");
+					if ((parseFloat(points[0])>=tfrom)&&(parseFloat(points[0])<tto))
+					{
+                    dataPoints.push({ 
+                        x: parseFloat(points[0]), 
+                        y: parseFloat(points[idx]) 		
+                    });
+					}
+					//console.debug(points[0]);
+                }
+            return dataPoints;
+        }
+	
+	$.get("http://192.168.1.240:8080/test.csv", function(data) {
+	    var chart = new CanvasJS.Chart("chartContainer", {
+		    title: {
+		         text: "Tims Heating Chart",
+		    },
+		    data: [{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,2)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,3)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,4)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,5)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,1)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,6)
+		      }]
+			  
+	     });
+		
+	      chart.render();
+
+	});
+  }
+</script>
+</head>
+<body>
+	<div id="chartContainer" style="width:100%; height:600px;"></div>
+</body>
+</html>

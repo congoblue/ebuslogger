@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tim's heating chart</title>
+<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script type="text/javascript">
+    window.onload = function() {
+	
+		params = (new URL(document.location)).searchParams;
+		searchParams = new URLSearchParams(params);
+		
+		var i;
+		var tfrom=0, tto=24, tday=0;
+
+		if (searchParams.has("from")) tfrom=parseFloat(searchParams.get("from"));
+		if (searchParams.has("to")) tto=parseFloat(searchParams.get("to"));
+		if (searchParams.has("day")) tday=parseInt(searchParams.get("day"));
+		var daysn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday','Sunday'];
+		tdayname=daysn[tday];
+		pn=window.location.href.split('?')[0];
+		
+		var qs='';
+		for (i = 0; i < 7; i++) 
+		{
+			qs=qs+'<a href="' + pn + '?day=' + i;
+			if (tfrom!=0) qs=qs+'&from='+tfrom;
+			qs=qs+'">' + daysn[i] + '</a> | ';
+		}
+		qs=qs+'<a href="' + pn + '?day=' + tday + '&from=0">-0-</a> |';
+		qs=qs+'<a href="' + pn + '?day=' + tday + '&from=6">-6-</a> |';
+		qs=qs+'<a href="' + pn + '?day=' + tday + '&from=12">-12-</a> |';
+		qs=qs+'<a href="' + pn + '?day=' + tday + '&from=18">-18-</a>';
+		document.getElementById('links').innerHTML=qs; 
+	
+        var dataPoints = [];
+		console.debug(tfrom,tto);
+         
+        function getDataPointsFromCSV(csv,idx) {
+            var dataPoints = csvLines = points = [];
+            csvLines = csv.split(/[\r?\n|\r|\n]+/);         
+					        
+            for (i = 0; i < csvLines.length; i++)
+                if (csvLines[i].length > 0) {
+                    points = csvLines[i].split(",");
+					if ((parseFloat(points[0])>=tfrom)&&(parseFloat(points[0])<tto))
+					{
+                    dataPoints.push({ 
+                        x: parseFloat(points[0]), 
+                        y: parseFloat(points[idx]) 		
+                    });
+					}
+					//console.debug(points[0]);
+                }
+            return dataPoints;
+        }
+	
+	$.get("http://local.congoblue.me:8888/day" + tday + ".csv", function(data) {
+	    var chart = new CanvasJS.Chart("chartContainer", {
+		    title: {
+		         text: "Tims Heating Chart: " + tdayname,
+		    },
+		    data: [{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,2)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,3)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,4)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,5)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,1)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,6)
+		      },{
+		         type: "line",
+		         dataPoints: getDataPointsFromCSV(data,7)
+		      }]
+			  
+	     });
+		
+	      chart.render();
+
+	});
+  }
+</script>
+</head>
+<body>
+    <div id="links"></div>
+	<div id="chartContainer" style="width:100%; height:600px;"></div>
+</body>
+</html>
